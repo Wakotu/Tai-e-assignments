@@ -27,18 +27,17 @@ import pascal.taie.analysis.dataflow.fact.DataflowResult;
 import pascal.taie.analysis.graph.cfg.CFG;
 
 class IterativeSolver<Node, Fact> extends Solver<Node, Fact> {
+  public IterativeSolver(DataflowAnalysis<Node, Fact> analysis) {
+    super(analysis);
+  }
 
-    public IterativeSolver(DataflowAnalysis<Node, Fact> analysis) {
-        super(analysis);
-    }
+  @Override
+  protected void doSolveForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    protected void doSolveForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected void doSolveBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
-        // TODO - finish me
-    }
+  @Override
+  protected void doSolveBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+    // TODO - finish me
+  }
 }

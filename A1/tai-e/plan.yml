@@ -1,3 +1,4 @@
+---
 - id: throw
   options:
     exception: explicit
@@ -11,7 +12,6 @@
     strongly: false
 - id: process-result
   options:
-    analyses:
-    - livevar
+    analyses: [livevar]
     action: dump
-    file: null
+    file:

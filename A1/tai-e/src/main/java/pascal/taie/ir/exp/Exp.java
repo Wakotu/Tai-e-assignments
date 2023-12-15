@@ -22,26 +22,25 @@
 
 package pascal.taie.ir.exp;
 
-import pascal.taie.language.type.Type;
-
 import java.util.List;
+import pascal.taie.language.type.Type;
 
 /**
  * Representation of expressions in Tai-e IR.
  */
 public interface Exp {
+  /**
+   * @return type of this expression.
+   */
+  Type getType();
 
-    /**
-     * @return type of this expression.
-     */
-    Type getType();
+  /**
+   * @return a list of expressions which are used by (contained in) this Exp.
+   */
+  // get subexpressions
+  default List<RValue> getUses() {
+    return List.of();
+  }
 
-    /**
-     * @return a list of expressions which are used by (contained in) this Exp.
-     */
-    default List<RValue> getUses() {
-        return List.of();
-    }
-
-    <T> T accept(ExpVisitor<T> visitor);
+  <T> T accept(ExpVisitor<T> visitor);
 }

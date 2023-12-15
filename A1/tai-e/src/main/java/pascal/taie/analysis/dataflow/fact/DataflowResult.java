@@ -32,38 +32,44 @@ import java.util.Map;
  * @param <Fact> type of data-flow facts
  */
 public class DataflowResult<Node, Fact> implements NodeResult<Node, Fact> {
+  // the DataflowResult object maintains two maps which associate node with facts
+  // In the livevar analysis, Node can be basic block and Fact would be SetFact<Var>
+  private final Map<Node, Fact> inFacts = new LinkedHashMap<>();
 
-    private final Map<Node, Fact> inFacts = new LinkedHashMap<>();
+  private final Map<Node, Fact> outFacts = new LinkedHashMap<>();
 
-    private final Map<Node, Fact> outFacts = new LinkedHashMap<>();
+  /**
+   * @return the flowing-in fact of given node.
+   */
+  @Override
+  public Fact getInFact(Node node) {
+    return inFacts.get(node);
+  }
 
-    /**
-     * @return the flowing-in fact of given node.
-     */
-    @Override
-    public Fact getInFact(Node node) {
-        return inFacts.get(node);
-    }
+  /**
+   * Associates a data-flow fact with a node as its flowing-in fact.
+   */
+  public void setInFact(Node node, Fact fact) {
+    inFacts.put(node, fact);
+  }
 
-    /**
-     * Associates a data-flow fact with a node as its flowing-in fact.
-     */
-    public void setInFact(Node node, Fact fact) {
-        inFacts.put(node, fact);
-    }
+  /**
+   * @return the flowing-out fact of given node.
+   */
+  @Override
+  public Fact getOutFact(Node node) {
+    return outFacts.get(node);
+  }
 
-    /**
-     * @return the flowing-out fact of given node.
-     */
-    @Override
-    public Fact getOutFact(Node node) {
-        return outFacts.get(node);
-    }
+  /**
+   * Associates a data-flow fact with a node as its flowing-out fact.
+   */
+  public void setOutFact(Node node, Fact fact) {
+    outFacts.put(node, fact);
+  }
 
-    /**
-     * Associates a data-flow fact with a node as its flowing-out fact.
-     */
-    public void setOutFact(Node node, Fact fact) {
-        outFacts.put(node, fact);
-    }
+  @Override
+  protected Object clone() throws CloneNotSupportedException {
+    return super.clone();
+  }
 }

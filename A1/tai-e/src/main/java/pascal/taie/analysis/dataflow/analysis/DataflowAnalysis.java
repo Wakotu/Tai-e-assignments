@@ -32,45 +32,45 @@ import pascal.taie.analysis.graph.cfg.Edge;
  * @param <Fact> type of data-flow facts
  */
 public interface DataflowAnalysis<Node, Fact> {
+  /**
+   * @return true if this analysis is forward, otherwise false.
+   */
+  boolean isForward();
 
-    /**
-     * @return true if this analysis is forward, otherwise false.
-     */
-    boolean isForward();
+  /**
+   * @return new fact in boundary conditions, i.e., the fact for
+   *         entry (exit) node in forward (backward) analysis.
+   */
+  Fact newBoundaryFact(CFG<Node> cfg);
 
-    /**
-     * @return new fact in boundary conditions, i.e., the fact for
-     * entry (exit) node in forward (backward) analysis.
-     */
-    Fact newBoundaryFact(CFG<Node> cfg);
+  /**
+   * @return new initial fact for non-boundary nodes.
+   */
+  Fact newInitialFact();
 
-    /**
-     * @return new initial fact for non-boundary nodes.
-     */
-    Fact newInitialFact();
+  /**
+   * Meets a fact into another (target) fact.
+   * This function will be used to handle control-flow confluences.
+   */
+  void meetInto(Fact fact, Fact target);
 
-    /**
-     * Meets a fact into another (target) fact.
-     * This function will be used to handle control-flow confluences.
-     */
-    void meetInto(Fact fact, Fact target);
+  /**
+   * Node Transfer function for the analysis.
+   * The function transfers data-flow from in (out) fact to out (in) fact
+   * for forward (backward) analysis.
+   *
+   * @return true if the transfer changed the out (in) fact, otherwise false.
+   */
+  boolean transferNode(Node node, Fact in, Fact out);
 
-    /**
-     * Node Transfer function for the analysis.
-     * The function transfers data-flow from in (out) fact to out (in) fact
-     * for forward (backward) analysis.
-     *
-     * @return true if the transfer changed the out (in) fact, otherwise false.
-     */
-    boolean transferNode(Node node, Fact in, Fact out);
+  /**
+   * @return true if this analysis needs to perform transfer for given edge,
+   *         otherwise false.
+   */
+  boolean needTransferEdge(Edge<Node> edge);
 
-    /**
-     * @return true if this analysis needs to perform transfer for given edge, otherwise false.
-     */
-    boolean needTransferEdge(Edge<Node> edge);
-
-    /**
-     * Edge Transfer function for this analysis.
-     */
-    Fact transferEdge(Edge<Node> edge, Fact nodeFact);
+  /**
+   * Edge Transfer function for this analysis.
+   */
+  Fact transferEdge(Edge<Node> edge, Fact nodeFact);
 }

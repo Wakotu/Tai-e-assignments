@@ -28,17 +28,21 @@ import java.util.List;
 
 /**
  * Main class for assignments.
+ * This main class is merely a wrapper for cmd args extraction
+ * The true main function is built in the archived package
  */
-public class Assignment {
 
-    public static void main(String[] args) {
-        if (args.length > 0) {
-            List<String> argList = new ArrayList<>();
-            Collections.addAll(argList, "-pp", "-p", "plan.yml");
-            Collections.addAll(argList, args);
-            Main.main(argList.toArray(new String[0]));
-        } else {
-            System.out.println("Usage: -cp <CLASS_PATH> -m <CLASS_NAME>");
-        }
+public class Assignment {
+  public static void main(String[] args) {
+    if (args.length > 0) {
+      List<String> argList = new ArrayList<>();
+      Collections.addAll(argList, "-pp", "-p", "plan.yml");
+      Collections.addAll(argList, args);
+      // transfer a collection to an array.
+      // the `new String[0]` means create a String array(which may be redundant)
+      Main.main(argList.toArray(new String[0]));
+    } else {
+      System.out.println("Usage: -cp <CLASS_PATH> -m <CLASS_NAME>");
     }
+  }
 }
