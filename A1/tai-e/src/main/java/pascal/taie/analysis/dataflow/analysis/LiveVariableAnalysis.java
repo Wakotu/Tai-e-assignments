@@ -79,7 +79,7 @@ public class LiveVariableAnalysis extends AbstractDataflowAnalysis<Stmt, SetFact
      * Over stmt, just remove def and simply add uses
      */
 
-    // WARN: need to handle the null pointer situation?
+    // no need to handle null pointer since the perfect initialization
     in.union(out);
 
     // get the def element
