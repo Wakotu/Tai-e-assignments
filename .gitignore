@@ -4,3 +4,8 @@ build/
 out/
 output/
 sootOutput/
+submit/
+.settings/
+bin/
+.classpath
+.project
