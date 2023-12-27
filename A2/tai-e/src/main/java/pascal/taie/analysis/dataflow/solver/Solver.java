@@ -34,68 +34,79 @@ import pascal.taie.analysis.graph.cfg.CFG;
  * @param <Fact> type of data-flow facts
  */
 public abstract class Solver<Node, Fact> {
+  protected final DataflowAnalysis<Node, Fact> analysis;
 
-    protected final DataflowAnalysis<Node, Fact> analysis;
+  protected Solver(DataflowAnalysis<Node, Fact> analysis) {
+    this.analysis = analysis;
+  }
 
-    protected Solver(DataflowAnalysis<Node, Fact> analysis) {
-        this.analysis = analysis;
+  /**
+   * Static factory method to create a new solver for given analysis.
+   */
+  public static <Node, Fact> Solver<Node, Fact> makeSolver(DataflowAnalysis<Node, Fact> analysis) {
+    return new WorkListSolver<>(analysis);
+  }
+
+  /**
+   * Starts this solver on the given CFG.
+   *
+   * @param cfg control-flow graph where the analysis is performed on
+   * @return the analysis result
+   */
+  public DataflowResult<Node, Fact> solve(CFG<Node> cfg) {
+    // initialize the related result and make it mutable
+    DataflowResult<Node, Fact> result = initialize(cfg);
+    // analysis and update result
+    doSolve(cfg, result);
+    return result;
+  }
+
+  /**
+   * Creates and initializes a new data-flow result for given CFG.
+   *
+   * @return the initialized data-flow result
+   */
+  private DataflowResult<Node, Fact> initialize(CFG<Node> cfg) {
+    DataflowResult<Node, Fact> result = new DataflowResult<>();
+    if (analysis.isForward()) {
+      initializeForward(cfg, result);
+    } else {
+      initializeBackward(cfg, result);
     }
+    return result;
+  }
 
-    /**
-     * Static factory method to create a new solver for given analysis.
-     */
-    public static <Node, Fact> Solver<Node, Fact> makeSolver(
-            DataflowAnalysis<Node, Fact> analysis) {
-        return new WorkListSolver<>(analysis);
+  protected void initializeForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+    // initialize boundary
+    Node entry = cfg.getEntry();
+    result.setOutFact(entry, analysis.newBoundaryFact(cfg));
+    // no need to initialize IN for entry
+    // initialize OUT alongwith IN for each BB
+    for (Node node : cfg) {
+      if (cfg.isEntry(node))
+        continue;
+
+      result.setOutFact(node, analysis.newInitialFact());
+      result.setInFact(node, analysis.newInitialFact());
     }
+  }
 
-    /**
-     * Starts this solver on the given CFG.
-     *
-     * @param cfg control-flow graph where the analysis is performed on
-     * @return the analysis result
-     */
-    public DataflowResult<Node, Fact> solve(CFG<Node> cfg) {
-        DataflowResult<Node, Fact> result = initialize(cfg);
-        doSolve(cfg, result);
-        return result;
+  protected void initializeBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+    throw new UnsupportedOperationException();
+  }
+
+  /**
+   * Solves the data-flow problem for given CFG.
+   */
+  private void doSolve(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+    if (analysis.isForward()) {
+      doSolveForward(cfg, result);
+    } else {
+      doSolveBackward(cfg, result);
     }
+  }
 
-    /**
-     * Creates and initializes a new data-flow result for given CFG.
-     *
-     * @return the initialized data-flow result
-     */
-    private DataflowResult<Node, Fact> initialize(CFG<Node> cfg) {
-        DataflowResult<Node, Fact> result = new DataflowResult<>();
-        if (analysis.isForward()) {
-            initializeForward(cfg, result);
-        } else {
-            initializeBackward(cfg, result);
-        }
-        return result;
-    }
+  protected abstract void doSolveForward(CFG<Node> cfg, DataflowResult<Node, Fact> result);
 
-    protected void initializeForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
-        // TODO - finish me
-    }
-
-    protected void initializeBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Solves the data-flow problem for given CFG.
-     */
-    private void doSolve(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
-        if (analysis.isForward()) {
-            doSolveForward(cfg, result);
-        } else {
-            doSolveBackward(cfg, result);
-        }
-    }
-
-    protected abstract void doSolveForward(CFG<Node> cfg, DataflowResult<Node, Fact> result);
-
-    protected abstract void doSolveBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result);
+  protected abstract void doSolveBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result);
 }
