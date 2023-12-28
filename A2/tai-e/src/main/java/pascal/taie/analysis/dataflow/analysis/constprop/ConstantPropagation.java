@@ -94,6 +94,8 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
         case CHAR:
         case BOOLEAN:
           return true;
+        default:
+          break;
       }
     }
     return false;
