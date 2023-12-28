@@ -22,6 +22,8 @@
 
 package pascal.taie.analysis.dataflow.solver;
 
+import java.util.HashSet;
+import java.util.Set;
 import pascal.taie.analysis.dataflow.analysis.DataflowAnalysis;
 import pascal.taie.analysis.dataflow.fact.DataflowResult;
 import pascal.taie.analysis.graph.cfg.CFG;
@@ -32,7 +34,36 @@ class WorkListSolver<Node, Fact> extends Solver<Node, Fact> {
   }
 
   @Override
-  protected void doSolveForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {}
+  protected void doSolveForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+    // implement the worklist algorithm:
+    // try to maintain a pool which is the set of Nodes whose OUT is likely to change
+    Set<Node> pool = new HashSet<>();
+    for (Node node : cfg) {
+      if (cfg.isEntry(node))
+        continue;
+      pool.add(node);
+    }
+
+    // run until no node would change
+    while (!pool.isEmpty()) {
+      pool.clear();
+
+      for (Node node : cfg) {
+        if (cfg.isEntry(node))
+          continue;
+
+        // update IN
+        for (Node pred : cfg.getPredsOf(node)) {
+          analysis.meetInto(result.getOutFact(pred), result.getInFact(node));
+        }
+        // generate OUT and judge whether out has been modified
+        boolean flag = analysis.transferNode(node, result.getInFact(node), result.getOutFact(node));
+        if (flag) {
+          pool.add(node);
+        }
+      }
+    }
+  }
 
   @Override
   protected void doSolveBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
