@@ -22,6 +22,7 @@
 
 package pascal.taie.analysis.dataflow.analysis.constprop;
 
+import java.util.NoSuchElementException;
 import pascal.taie.analysis.dataflow.analysis.AbstractDataflowAnalysis;
 import pascal.taie.analysis.graph.cfg.CFG;
 import pascal.taie.config.AnalysisConfig;
@@ -54,7 +55,12 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
 
   @Override
   public CPFact newBoundaryFact(CFG<Stmt> cfg) {
-    return new CPFact();
+    var fact = new CPFact();
+    // initialize each paramter as NAC
+    for (var par : cfg.getIR().getParams()) {
+      fact.update(par, Value.getNAC());
+    }
+    return fact;
   }
 
   @Override
@@ -64,20 +70,54 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
 
   @Override
   public void meetInto(CPFact fact, CPFact target) {
-    // TODO - finish me
+    // merge fact into target
+    for (var key : fact.keySet()) {
+      var val1 = fact.get(key);
+      var val2 = target.get(key); // UNDEF to represent the situation of miss
+      var newVal = meetValue(val1, val2);
+      target.update(key, newVal);
+    }
   }
 
   /**
    * Meets two Values.
    */
   public Value meetValue(Value v1, Value v2) {
-    // TODO - finish me
-    return null;
+    if (v1.equals(v2))
+      return v1;
+    if (v1.isNAC() || v2.isNAC())
+      return Value.getNAC();
+
+    if (v1.isUndef())
+      return v2;
+    if (v2.isUndef())
+      return v1;
+
+    return Value.getNAC();
   }
 
   @Override
+  // returns whether the out(in) Node has changed
   public boolean transferNode(Stmt stmt, CPFact in, CPFact out) {
     // TODO - finish me
+    Var def = null;
+    try {
+      var x = stmt.getDef().get();
+      if (x instanceof Var)
+        def = (Var) x;
+    } catch (NoSuchElementException e) {
+    }
+
+    if (def == null)
+      return false;
+
+    // didn't care about no int variables
+    if (!canHoldInt(def))
+      return false;
+
+    out = in.copy();
+    // get the right value
+
     return false;
   }
 
@@ -109,7 +149,6 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
    * @return the resulting {@link Value}
    */
   public static Value evaluate(Exp exp, CPFact in) {
-    // TODO - finish me
     return null;
   }
 }

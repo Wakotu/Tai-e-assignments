@@ -22,11 +22,10 @@
 
 package pascal.taie.analysis.dataflow.analysis.constprop;
 
-import pascal.taie.analysis.dataflow.fact.MapFact;
-import pascal.taie.ir.exp.Var;
-
 import java.util.Collections;
 import java.util.Map;
+import pascal.taie.analysis.dataflow.fact.MapFact;
+import pascal.taie.ir.exp.Var;
 
 /**
  * Represents data facts of constant propagation, which maps variables
@@ -39,38 +38,38 @@ import java.util.Map;
  * it effectively removes the variable from the CPFact.
  */
 public class CPFact extends MapFact<Var, Value> {
+  public CPFact() {
+    this(Collections.emptyMap());
+  }
 
-    public CPFact() {
-        this(Collections.emptyMap());
-    }
+  private CPFact(Map<Var, Value> map) {
+    super(map);
+  }
 
-    private CPFact(Map<Var, Value> map) {
-        super(map);
-    }
+  /**
+   * @return the value of given variable in this fact,
+   * or UNDEF the variable is absent in this fact.
+   */
+  @Override
+  public Value get(Var key) {
+    return map.getOrDefault(key, Value.getUndef());
+  }
 
-    /**
-     * @return the value of given variable in this fact,
-     * or UNDEF the variable is absent in this fact.
-     */
-    @Override
-    public Value get(Var key) {
-        return map.getOrDefault(key, Value.getUndef());
+  @Override
+  // add or modify
+  public boolean update(Var key, Value value) {
+    if (value.isUndef()) {
+      // if the client code sets variable key to UNDEF,
+      // then we remove the variable from the CPFact
+      // as we use absence to represent UNDEF.
+      return remove(key) != null;
+    } else {
+      return super.update(key, value);
     }
+  }
 
-    @Override
-    public boolean update(Var key, Value value) {
-        if (value.isUndef()) {
-            // if the client code sets variable key to UNDEF,
-            // then we remove the variable from the CPFact
-            // as we use absence to represent UNDEF.
-            return remove(key) != null;
-        } else {
-            return super.update(key, value);
-        }
-    }
-
-    @Override
-    public CPFact copy() {
-        return new CPFact(this.map);
-    }
+  @Override
+  public CPFact copy() {
+    return new CPFact(this.map);
+  }
 }
