@@ -64,24 +64,17 @@ public class LiveVariableAnalysis extends AbstractDataflowAnalysis<Stmt, SetFact
      * A method to handle control flow merge
      * Basic idea: merge the new fact
      */
-    // WARN: need to handle the null pointer situation?
+    // data flows: fact to be merged into target
     target.union(fact);
   }
 
   @Override
   public boolean transferNode(Stmt stmt, SetFact<Var> in, SetFact<Var> out) {
-    /**
-     * Need to realize that this transformation is based on statement.
-     * the key transferring idea is remove definition and removes use-before-def in
-     * BB
-     * Note that a statement could not define and use a variable at the same
-     * time.(guess)
-     * Over stmt, just remove def and simply add uses
-     */
-
-    // no need to handle null pointer since the perfect initialization
+    var o_in = in.copy();
+    // Data flows from `out` to `in`
     in.union(out);
 
+    // note that def runs after use
     // get the def element
     Var def = null;
     try {
@@ -96,27 +89,11 @@ public class LiveVariableAnalysis extends AbstractDataflowAnalysis<Stmt, SetFact
 
     // get uses
     var uses = stmt.getUses();
-    // basic idea: check if element of uses is Var and add its subexpressions to the
-    // pool
-    Queue<RValue> q = new ArrayDeque<>();
-    // initialize the queue
     for (var use : uses) {
-      q.add(use);
-    }
-
-    while (!q.isEmpty()) {
-      var exp = q.remove();
-      if (exp instanceof Var) {
-        // handle `use` in factset
-        in.add((Var) exp);
-      } else {
-        // if exp is not a compound expression, code below would have no effect
-        for (var sub : exp.getUses()) {
-          q.add(sub);
-        }
+      if (use instanceof Var) {
+        in.add((Var) use);
       }
     }
-
-    return false;
+    return !in.equals(o_in);
   }
 }
