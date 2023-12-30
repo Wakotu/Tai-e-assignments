@@ -46,12 +46,8 @@ class WorkListSolver<Node, Fact> extends Solver<Node, Fact> {
 
     // run until no node would change
     while (!pool.isEmpty()) {
-      pool.clear();
-
-      for (Node node : cfg) {
-        if (cfg.isEntry(node))
-          continue;
-
+      Set<Node> newPool = new HashSet<>();
+      for (Node node : pool) {
         // update IN
         for (Node pred : cfg.getPredsOf(node)) {
           analysis.meetInto(result.getOutFact(pred), result.getInFact(node));
@@ -59,9 +55,13 @@ class WorkListSolver<Node, Fact> extends Solver<Node, Fact> {
         // generate OUT and judge whether out has been modified
         boolean flag = analysis.transferNode(node, result.getInFact(node), result.getOutFact(node));
         if (flag) {
-          pool.add(node);
+          // add all its succs
+          for (var succ : cfg.getSuccsOf(node)) {
+            newPool.add(succ);
+          }
         }
       }
+      pool = newPool;
     }
   }
 

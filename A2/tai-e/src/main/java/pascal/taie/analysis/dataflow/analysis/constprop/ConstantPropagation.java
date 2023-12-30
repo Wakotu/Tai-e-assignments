@@ -93,9 +93,19 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
     return Value.getNAC();
   }
 
+  private boolean merge(CPFact fact, CPFact target) {
+    var flag = false;
+    for (var key : fact.keySet()) {
+      flag = flag | target.update(key, fact.get(key));
+    }
+    return flag;
+  }
+
   @Override
   // returns whether the out(in) Node has changed
   public boolean transferNode(Stmt stmt, CPFact in, CPFact out) {
+    var flag = merge(in, out);
+
     Var def = null;
     try {
       var x = stmt.getDef().get();
@@ -105,19 +115,29 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
     }
 
     if (def == null)
-      return false;
+      return flag;
 
     // didn't care about no int variables
     if (!canHoldInt(def))
-      return false;
+      return flag;
 
-    out = in.copy();
     // get the right value
     var useList = stmt.getUses();
-    if (useList.size() == 1 || useList.size() == 3) {
-      return out.update(def, evaluate(useList.get(useList.size() - 1), in));
+    for (var use : useList) {
+      if (use instanceof Var) {
+        Var x = (Var) use;
+        if (x.getName().equals("%this")) {
+          flag |= out.update(def, Value.getNAC());
+          return flag;
+        }
+      }
     }
-    return false;
+    if (useList.size() == 1 || useList.size() == 3) {
+      var val = evaluate(useList.get(useList.size() - 1), in);
+      if (val != null)
+        flag |= out.update(def, val);
+    }
+    return flag;
   }
 
   /**
