@@ -22,23 +22,72 @@
 
 package pascal.taie.analysis.dataflow.solver;
 
+import java.util.HashSet;
+import java.util.Set;
 import pascal.taie.analysis.dataflow.analysis.DataflowAnalysis;
 import pascal.taie.analysis.dataflow.fact.DataflowResult;
 import pascal.taie.analysis.graph.cfg.CFG;
 
 class WorkListSolver<Node, Fact> extends Solver<Node, Fact> {
+  WorkListSolver(DataflowAnalysis<Node, Fact> analysis) {
+    super(analysis);
+  }
 
-    WorkListSolver(DataflowAnalysis<Node, Fact> analysis) {
-        super(analysis);
+  @Override
+  protected void doSolveForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+    Set<Node> pool = new HashSet<>();
+    for (Node node : cfg) {
+      if (cfg.isEntry(node))
+        continue;
+      pool.add(node);
     }
 
-    @Override
-    protected void doSolveForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
-        // TODO - finish me
+    // run until no node would change
+    while (!pool.isEmpty()) {
+      Set<Node> newPool = new HashSet<>();
+      for (Node node : pool) {
+        // update IN
+        for (Node pred : cfg.getPredsOf(node)) {
+          analysis.meetInto(result.getOutFact(pred), result.getInFact(node));
+        }
+        // generate OUT and judge whether out has been modified
+        boolean flag = analysis.transferNode(node, result.getInFact(node), result.getOutFact(node));
+        if (flag) {
+          // add all its succs
+          for (var succ : cfg.getSuccsOf(node)) {
+            newPool.add(succ);
+          }
+        }
+      }
+      pool = newPool;
+    }
+  }
+
+  @Override
+  protected void doSolveBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+    Set<Node> pool = new HashSet<>();
+
+    for (Node node : cfg) {
+      if (cfg.isExit(node))
+        continue;
+      pool.add(node);
     }
 
-    @Override
-    protected void doSolveBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
-        // TODO - finish me
+    while (!pool.isEmpty()) {
+      Set<Node> newPool = new HashSet<>();
+
+      for (Node node : pool) {
+        for (Node succ : cfg.getSuccsOf(node)) {
+          analysis.meetInto(result.getInFact(succ), result.getOutFact(node));
+        }
+        var flag = analysis.transferNode(node, result.getInFact(node), result.getOutFact(node));
+        if (flag) {
+          for (Node pred : cfg.getPredsOf(node)) {
+            newPool.add(pred);
+          }
+        }
+      }
+      pool = newPool;
     }
+  }
 }

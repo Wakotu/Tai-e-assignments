@@ -22,49 +22,70 @@
 
 package pascal.taie.analysis.dataflow.analysis;
 
+import java.util.NoSuchElementException;
 import pascal.taie.analysis.dataflow.fact.SetFact;
 import pascal.taie.analysis.graph.cfg.CFG;
 import pascal.taie.config.AnalysisConfig;
+import pascal.taie.ir.exp.LValue;
 import pascal.taie.ir.exp.Var;
 import pascal.taie.ir.stmt.Stmt;
 
 /**
  * Implementation of classic live variable analysis.
  */
-public class LiveVariableAnalysis extends
-        AbstractDataflowAnalysis<Stmt, SetFact<Var>> {
+public class LiveVariableAnalysis extends AbstractDataflowAnalysis<Stmt, SetFact<Var>> {
+  public static final String ID = "livevar";
 
-    public static final String ID = "livevar";
+  public LiveVariableAnalysis(AnalysisConfig config) {
+    super(config);
+  }
 
-    public LiveVariableAnalysis(AnalysisConfig config) {
-        super(config);
+  @Override
+  public boolean isForward() {
+    return false;
+  }
+
+  @Override
+  public SetFact<Var> newBoundaryFact(CFG<Stmt> cfg) {
+    return new SetFact<>();
+  }
+
+  @Override
+  public SetFact<Var> newInitialFact() {
+    return new SetFact<>();
+  }
+
+  @Override
+  public void meetInto(SetFact<Var> fact, SetFact<Var> target) {
+    target.union(fact);
+  }
+
+  @Override
+  public boolean transferNode(Stmt stmt, SetFact<Var> in, SetFact<Var> out) {
+    var o_in = in.copy();
+    // Data flows from `out` to `in`
+    in.union(out);
+
+    // note that def runs after use
+    // get the def element
+    Var def = null;
+    try {
+      LValue v = stmt.getDef().get();
+      if (v instanceof Var) {
+        def = (Var) v;
+      }
+    } catch (NoSuchElementException e) {
     }
+    if (def != null)
+      in.remove(def);
 
-    @Override
-    public boolean isForward() {
-        return false;
+    // get uses
+    var uses = stmt.getUses();
+    for (var use : uses) {
+      if (use instanceof Var) {
+        in.add((Var) use);
+      }
     }
-
-    @Override
-    public SetFact<Var> newBoundaryFact(CFG<Stmt> cfg) {
-        // TODO - finish me
-        return null;
-    }
-
-    @Override
-    public SetFact<Var> newInitialFact() {
-        // TODO - finish me
-        return null;
-    }
-
-    @Override
-    public void meetInto(SetFact<Var> fact, SetFact<Var> target) {
-        // TODO - finish me
-    }
-
-    @Override
-    public boolean transferNode(Stmt stmt, SetFact<Var> in, SetFact<Var> out) {
-        // TODO - finish me
-        return false;
-    }
+    return !in.equals(o_in);
+  }
 }
