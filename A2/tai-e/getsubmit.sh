@@ -10,6 +10,7 @@ mkdir "$dir"
 
 files=()
 
+# need to customize each time before use
 basenames=('ConstantPropagation.java' 'Solver.java' 'WorkListSolver.java')
 
 for name in "${basenames[@]}"; do
