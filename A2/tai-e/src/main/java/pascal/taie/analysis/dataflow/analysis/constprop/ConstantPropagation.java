@@ -121,7 +121,7 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
     // didn't care about no int variables
     if (!canHoldInt(def))
       return flag;
-    if (def.getLoadFields().size() > 0)
+    if (def.getStoreFields().size() > 0)
       return flag;
 
     var useList = stmt.getUses();
