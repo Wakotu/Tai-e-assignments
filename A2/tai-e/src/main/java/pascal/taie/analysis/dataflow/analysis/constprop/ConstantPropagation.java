@@ -56,6 +56,9 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
     var fact = new CPFact();
     // initialize each paramter as NAC
     for (var par : cfg.getIR().getParams()) {
+      // need to judge if `par` is int
+      if (!canHoldInt(par))
+        continue;
       fact.update(par, Value.getNAC());
     }
     return fact;
