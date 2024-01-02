@@ -34,6 +34,7 @@ import pascal.taie.ir.exp.Exp;
 import pascal.taie.ir.exp.IntLiteral;
 import pascal.taie.ir.exp.ShiftExp;
 import pascal.taie.ir.exp.Var;
+import pascal.taie.ir.stmt.Invoke;
 import pascal.taie.ir.stmt.Stmt;
 import pascal.taie.language.type.PrimitiveType;
 import pascal.taie.language.type.Type;
@@ -120,13 +121,31 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
     // didn't care about no int variables
     if (!canHoldInt(def))
       return flag;
+    if (def.getLoadFields().size() > 0)
+      return flag;
 
-    // get the right value
     var useList = stmt.getUses();
+    // check `%this` to detect method call
+    // for (var use : useList) {
+    //   if (use instanceof Var) {
+    //     Var x = (Var) use;
+    //     if (x.getName().equals("%this")) {
+    //       flag |= out.update(def, Value.getNAC());
+    //       return flag;
+    //     }
+    //   }
+    // }
+
+    // check method call
+    if (stmt instanceof Invoke) {
+      flag |= out.update(def, Value.getNAC());
+      return flag;
+    }
+    // check load Fields to detect object fileds
     for (var use : useList) {
       if (use instanceof Var) {
         Var x = (Var) use;
-        if (x.getName().equals("%this")) {
+        if (x.getLoadFields().size() > 0) {
           flag |= out.update(def, Value.getNAC());
           return flag;
         }
