@@ -1,0 +1,90 @@
+> Task :compileJava UP-TO-DATE
+> Task :processResources NO-SOURCE
+> Task :classes UP-TO-DATE
+
+> Task :run
+Tai-e starts ...
+Writing options to output/options.yml
+WorldBuilder starts ...
+Warning: main class 'Loops' does not have main(String[]) method!
+10516 classes with 107065 methods in the world
+WorldBuilder finishes, elapsed time: 2.95s
+throw starts ...
+1 classes in scope (app) of class analyses
+4 methods in scope (app) of method analyses
+throw finishes, elapsed time: 0.02s
+cfg starts ...
+cfg finishes, elapsed time: 0.01s
+constprop starts ...
+constprop finishes, elapsed time: 0.00s
+livevar starts ...
+livevar finishes, elapsed time: 0.00s
+deadcode starts ...
+deadcode finishes, elapsed time: 0.00s
+process-result starts ...
+-------------------- <Loops: void <init>()> (livevar) --------------------
+[0@L1] invokespecial %this.<java.lang.Object: void <init>()>(); []
+[1@L1] return; []
+
+-------------------- <Loops: void <init>()> (constprop) --------------------
+[0@L1] invokespecial %this.<java.lang.Object: void <init>()>(); {}
+[1@L1] return; {}
+
+-------------------- <Loops: void <init>()> (deadcode) --------------------
+
+-------------------- <Loops: void deadLoop()> (livevar) --------------------
+[0@L4] x = 1; [%this, x]
+[1@L5] y = 0; [%this, x, y]
+[2@L6] z = 100; [%this, x, y, z]
+[3@L6] nop; [%this, x, y, z]
+[4@L7] if (x > y) goto 6; [%this, x, y, z]
+[5@L7] goto 9; [%this]
+[6@L7] nop; [%this, x, y, z]
+[7@L8] invokevirtual %this.<Loops: void use(int)>(z); [%this, x, y, z]
+[8@L7] goto 3; [%this, x, y, z]
+[9@L7] nop; [%this]
+[10@L10] invokevirtual %this.<Loops: void dead()>(); []
+[11@L10] return; []
+
+-------------------- <Loops: void deadLoop()> (constprop) --------------------
+[0@L4] x = 1; {x=1}
+[1@L5] y = 0; {x=1, y=0}
+[2@L6] z = 100; {x=1, y=0, z=100}
+[3@L6] nop; {x=1, y=0, z=100}
+[4@L7] if (x > y) goto 6; {x=1, y=0, z=100}
+[5@L7] goto 9; {x=1, y=0, z=100}
+[6@L7] nop; {x=1, y=0, z=100}
+[7@L8] invokevirtual %this.<Loops: void use(int)>(z); {x=1, y=0, z=100}
+[8@L7] goto 3; {x=1, y=0, z=100}
+[9@L7] nop; {x=1, y=0, z=100}
+[10@L10] invokevirtual %this.<Loops: void dead()>(); {x=1, y=0, z=100}
+[11@L10] return; {x=1, y=0, z=100}
+
+-------------------- <Loops: void deadLoop()> (deadcode) --------------------
+[5@L7] goto 9;
+[9@L7] nop;
+[10@L10] invokevirtual %this.<Loops: void dead()>();
+[11@L10] return;
+[13@L-1] nop;
+
+-------------------- <Loops: void dead()> (livevar) --------------------
+[0@L13] return; []
+
+-------------------- <Loops: void dead()> (constprop) --------------------
+[0@L13] return; {}
+
+-------------------- <Loops: void dead()> (deadcode) --------------------
+
+-------------------- <Loops: void use(int)> (livevar) --------------------
+[0@L16] return; []
+
+-------------------- <Loops: void use(int)> (constprop) --------------------
+[0@L16] return; {n=NAC}
+
+-------------------- <Loops: void use(int)> (deadcode) --------------------
+
+process-result finishes, elapsed time: 0.01s
+Tai-e finishes, elapsed time: 3.12s
+
+BUILD SUCCESSFUL in 3s
+2 actionable tasks: 1 executed, 1 up-to-date

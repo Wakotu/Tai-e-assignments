@@ -225,7 +225,6 @@ public class DeadCodeDetection extends MethodAnalysis {
     DataflowResult<Stmt, SetFact<Var>> liveVars = ir.getResult(LiveVariableAnalysis.ID);
     // keep statements (dead code) sorted in the resulting set
     Set<Stmt> deadCode = new TreeSet<>(Comparator.comparing(Stmt::getIndex));
-    // TODO - finish me
     // Your task is to recognize dead code in ir and add it to deadCode
 
     // add useless Assignment code
@@ -243,6 +242,9 @@ public class DeadCodeDetection extends MethodAnalysis {
 
     Set<Stmt> reachable = get_reachable(cfg, constants);
     for (Stmt stmt : cfg) {
+      if (cfg.isExit(stmt)) {
+        continue;
+      }
       if (reachable.contains(stmt))
         continue;
       deadCode.add(stmt);
