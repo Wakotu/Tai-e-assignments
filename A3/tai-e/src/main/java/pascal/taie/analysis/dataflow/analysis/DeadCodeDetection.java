@@ -38,6 +38,7 @@ import pascal.taie.analysis.dataflow.fact.SetFact;
 import pascal.taie.analysis.graph.cfg.CFG;
 import pascal.taie.analysis.graph.cfg.CFGBuilder;
 import pascal.taie.analysis.graph.cfg.Edge;
+import pascal.taie.analysis.graph.cfg.Edge.Kind;
 import pascal.taie.config.AnalysisConfig;
 import pascal.taie.ir.IR;
 import pascal.taie.ir.exp.ArithmeticExp;
@@ -115,26 +116,47 @@ public class DeadCodeDetection extends MethodAnalysis {
     return res;
   }
 
-  // -1 NAC, 1 for sure, 0 for impossible
-  private static int evaluate_cond(ConditionExp exp, CPFact fact) {
+  // -1 NAC, 1 for true, 0 for false
+  private static Value evaluate(ConditionExp exp, CPFact fact) {
     Value v1 = fact.get(exp.getOperand1()), v2 = fact.get(exp.getOperand2());
     if (v1.isConstant() && v2.isConstant()) {
       int a = v1.getConstant(), b = v2.getConstant();
-      return calc(a, b, exp);
+      return Value.makeConstant(calc(a, b, exp));
     }
-    return -1;
+    return Value.getNAC();
   }
 
-  private static boolean reachable(Stmt u, Edge<Stmt> e, DataflowResult<Stmt, CPFact> constants) {
-    if (u instanceof If) {
-      var cond = ((If) u).getCondition();
-      int flag = evaluate_cond(cond, constants.getInFact(u));
-      if (flag == -1)
-        return true;
-      return flag == 1;
-    } else {
-      // TODO: implement switch reachable
+  private static boolean reachable_if(Value res, Edge<Stmt> e) {
+    if (!res.isConstant())
+      return true;
+    var flag = res.getConstant() == 0 ? false : true;
+    switch (e.getKind()) {
+      case IF_FALSE:
+        flag = !flag;
+        break;
+      default:
+        break;
     }
+    return flag;
+  }
+
+  private static boolean reachable_switch_case(Value res, Edge<Stmt> e) {
+    return res.getConstant() == e.getCaseValue();
+  }
+
+  private static void handle_edge(Queue<Stmt> q, Set<Stmt> vis, Edge<Stmt> e) {
+    var v = e.getTarget();
+    if (vis.contains(v))
+      return;
+    q.add(v);
+    vis.add(v);
+  }
+
+  private static void handle_node(Queue<Stmt> q, Set<Stmt> vis, Stmt v) {
+    if (vis.contains(v))
+      return;
+    q.add(v);
+    vis.add(v);
   }
 
   private static Set<Stmt> get_reachable(CFG<Stmt> cfg, DataflowResult<Stmt, CPFact> constants) {
@@ -147,24 +169,46 @@ public class DeadCodeDetection extends MethodAnalysis {
 
     while (!q.isEmpty()) {
       u = q.remove();
+      var fact = constants.getInFact(u);
 
-      if (u instanceof If || u instanceof SwitchStmt)
+      // evaluate the expression and then check reachability based on branch restriction
+      if (u instanceof If) {
+        var cond = ((If) u).getCondition();
+        var res = evaluate(cond, fact);
         for (var e : cfg.getOutEdgesOf(u)) {
-          if (!reachable(u, e, constants))
+          if (!reachable_if(res, e))
             continue;
-          // add corresponding nodes
-          var v = e.getTarget();
-          if (vis.contains(v))
-            continue;
-          q.add(v);
-          vis.add(v);
+          handle_edge(q, vis, e);
         }
-      else
+      } else if (u instanceof SwitchStmt) {
+        // need to consider case and default target
+        Value res = fact.get(((SwitchStmt) u).getVar());
+        if (!res.isConstant()) {
+          for (var e : cfg.getOutEdgesOf(u)) {
+            handle_edge(q, vis, e);
+          }
+        } else {
+          boolean has_default = false;
+          boolean hit = false;
+          // handle switch case first
+          for (var e : cfg.getOutEdgesOf(u)) {
+            if (e.getKind() == Kind.SWITCH_DEFAULT) {
+              has_default = true;
+              continue;
+            }
+            if (!reachable_switch_case(res, e))
+              continue;
+            hit = true;
+            handle_edge(q, vis, e);
+          }
+          if (has_default && !hit) {
+            var t = ((SwitchStmt) u).getDefaultTarget();
+            handle_node(q, vis, t);
+          }
+        }
+      } else
         for (Stmt v : cfg.getSuccsOf(u)) {
-          if (vis.contains(v))
-            continue;
-          q.add(v);
-          vis.add(v);
+          handle_node(q, vis, v);
         }
     }
 
