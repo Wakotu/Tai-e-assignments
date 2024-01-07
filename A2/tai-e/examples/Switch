@@ -1,0 +1,45 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+> Task :compileJava
+> Task :processResources NO-SOURCE
+> Task :classes
+
+> Task :run
+Tai-e starts ...
+Writing options to output/options.yml
+WorldBuilder starts ...
+10516 classes with 107063 methods in the world
+WorldBuilder finishes, elapsed time: 3.70s
+throw starts ...
+1 classes in scope (app) of class analyses
+2 methods in scope (app) of method analyses
+throw finishes, elapsed time: 0.13s
+cfg starts ...
+cfg finishes, elapsed time: 0.02s
+constprop starts ...
+constprop finishes, elapsed time: 0.01s
+process-result starts ...
+-------------------- <Switch: void <init>()> (constprop) --------------------
+[0@L1] invokespecial %this.<java.lang.Object: void <init>()>(); {}
+[1@L1] return; {}
+
+-------------------- <Switch: void main(java.lang.String[])> (constprop) --------------------
+[0@L3] x = 1; {x=1}
+[1@L4] goto 9; {x=1}
+[2@L4] nop; {x=1}
+[3@L6] goto 12; {x=1}
+[4@L6] nop; {x=1}
+[5@L8] goto 12; {x=1}
+[6@L8] nop; {x=1}
+[7@L10] goto 12; {x=1}
+[8@L4] goto 12; {}
+[9@L4] nop; {x=1}
+[10@L4] nop; {x=1}
+[11@L4] tableswitch (x) {1->2, 2->4, default->6}; {x=1}
+[12@L4] nop; {x=1}
+[13@L4] return; {x=1}
+
+process-result finishes, elapsed time: 0.01s
+Tai-e finishes, elapsed time: 4.50s
+
+BUILD SUCCESSFUL in 21s
+2 actionable tasks: 2 executed
