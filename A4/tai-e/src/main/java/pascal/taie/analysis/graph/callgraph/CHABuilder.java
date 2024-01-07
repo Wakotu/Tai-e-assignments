@@ -23,8 +23,11 @@
 package pascal.taie.analysis.graph.callgraph;
 
 import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 import pascal.taie.World;
 import pascal.taie.ir.proginfo.MethodRef;
 import pascal.taie.ir.stmt.Invoke;
@@ -46,18 +49,70 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
   }
 
   private CallGraph<Invoke, JMethod> buildCallGraph(JMethod entry) {
+    // CG, reachable methods, queue
     DefaultCallGraph callGraph = new DefaultCallGraph();
     callGraph.addEntryMethod(entry);
-    // TODO - finish me
+    Queue<JMethod> wl = new LinkedList<>();
+    while (!wl.isEmpty()) {
+      JMethod u = wl.remove();
+
+      var csList = callGraph.callSitesIn(u).collect(Collectors.toList());
+      for (var cs : csList) {
+        var mSet = resolve(cs);
+        for (var v : mSet) {
+          callGraph.addEdge(new Edge<Invoke, JMethod>(CallGraphs.getCallKind(cs), cs, v));
+          if (callGraph.contains(v))
+            continue;
+          callGraph.addReachableMethod(v);
+          wl.add(v);
+        }
+      }
+    }
     return callGraph;
+  }
+
+  private void resolve_virtual(Set<JMethod> res, JClass c, Subsignature m) {
+    // use CHA to
+    if (c.isInterface()) {
+      for (var sub : hierarchy.getDirectSubinterfacesOf(c)) {
+        resolve_virtual(res, sub, m);
+      }
+      for (var sub : hierarchy.getDirectImplementorsOf(c)) {
+        resolve_virtual(res, sub, m);
+      }
+    } else {
+      // dispatch
+      var t = dispatch(c, m);
+      if (t != null)
+        res.add(t);
+      for (var sub : hierarchy.getDirectSubclassesOf(c)) {
+        resolve_virtual(res, sub, m);
+      }
+    }
   }
 
   /**
    * Resolves call targets (callees) of a call site via CHA.
    */
   private Set<JMethod> resolve(Invoke callSite) {
-    // TODO - finish me
-    return null;
+    CallKind kind = CallGraphs.getCallKind(callSite);
+    var ref = callSite.getMethodRef();
+    JClass c = ref.getDeclaringClass();
+    var m = ref.getSubsignature();
+    Set<JMethod> res = new HashSet<>();
+    switch (kind) {
+      case STATIC:
+        res.add(dispatch(c, m));
+        break;
+
+      case SPECIAL:
+        res.add(dispatch(c, m));
+        break;
+      default:
+        resolve_virtual(res, c, m);
+        break;
+    }
+    return res;
   }
 
   /**
