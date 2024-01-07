@@ -22,6 +22,9 @@
 
 package pascal.taie.analysis.graph.callgraph;
 
+import java.util.ArrayDeque;
+import java.util.Queue;
+import java.util.Set;
 import pascal.taie.World;
 import pascal.taie.ir.proginfo.MethodRef;
 import pascal.taie.ir.stmt.Invoke;
@@ -30,46 +33,48 @@ import pascal.taie.language.classes.JClass;
 import pascal.taie.language.classes.JMethod;
 import pascal.taie.language.classes.Subsignature;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
-import java.util.Set;
-
 /**
  * Implementation of the CHA algorithm.
  */
 class CHABuilder implements CGBuilder<Invoke, JMethod> {
+  private ClassHierarchy hierarchy;
 
-    private ClassHierarchy hierarchy;
+  @Override
+  public CallGraph<Invoke, JMethod> build() {
+    hierarchy = World.get().getClassHierarchy();
+    return buildCallGraph(World.get().getMainMethod());
+  }
 
-    @Override
-    public CallGraph<Invoke, JMethod> build() {
-        hierarchy = World.get().getClassHierarchy();
-        return buildCallGraph(World.get().getMainMethod());
+  private CallGraph<Invoke, JMethod> buildCallGraph(JMethod entry) {
+    DefaultCallGraph callGraph = new DefaultCallGraph();
+    callGraph.addEntryMethod(entry);
+    // TODO - finish me
+    return callGraph;
+  }
+
+  /**
+   * Resolves call targets (callees) of a call site via CHA.
+   */
+  private Set<JMethod> resolve(Invoke callSite) {
+    // TODO - finish me
+    return null;
+  }
+
+  /**
+   * Looks up the target method based on given class and method subsignature.
+   *
+   * @return the dispatched target method, or null if no satisfying method
+   * can be found.
+   */
+  private JMethod dispatch(JClass jclass, Subsignature subsignature) {
+    JClass p = jclass;
+    while (p != null) {
+      JMethod m = p.getDeclaredMethod(subsignature);
+      if (m != null && !m.isAbstract())
+        return m;
+      // p get upwards
+      p = p.getSuperClass();
     }
-
-    private CallGraph<Invoke, JMethod> buildCallGraph(JMethod entry) {
-        DefaultCallGraph callGraph = new DefaultCallGraph();
-        callGraph.addEntryMethod(entry);
-        // TODO - finish me
-        return callGraph;
-    }
-
-    /**
-     * Resolves call targets (callees) of a call site via CHA.
-     */
-    private Set<JMethod> resolve(Invoke callSite) {
-        // TODO - finish me
-        return null;
-    }
-
-    /**
-     * Looks up the target method based on given class and method subsignature.
-     *
-     * @return the dispatched target method, or null if no satisfying method
-     * can be found.
-     */
-    private JMethod dispatch(JClass jclass, Subsignature subsignature) {
-        // TODO - finish me
-        return null;
-    }
+    return null;
+  }
 }

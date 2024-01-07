@@ -40,78 +40,76 @@ import pascal.taie.language.type.PrimitiveType;
 import pascal.taie.language.type.Type;
 import pascal.taie.util.AnalysisException;
 
-public class ConstantPropagation extends
-        AbstractDataflowAnalysis<Stmt, CPFact> {
+public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> {
+  public static final String ID = "constprop";
 
-    public static final String ID = "constprop";
+  public ConstantPropagation(AnalysisConfig config) {
+    super(config);
+  }
 
-    public ConstantPropagation(AnalysisConfig config) {
-        super(config);
+  @Override
+  public boolean isForward() {
+    return true;
+  }
+
+  @Override
+  public CPFact newBoundaryFact(CFG<Stmt> cfg) {
+    // TODO - finish me
+    return null;
+  }
+
+  @Override
+  public CPFact newInitialFact() {
+    // TODO - finish me
+    return null;
+  }
+
+  @Override
+  public void meetInto(CPFact fact, CPFact target) {
+    // TODO - finish me
+  }
+
+  /**
+   * Meets two Values.
+   */
+  public Value meetValue(Value v1, Value v2) {
+    // TODO - finish me
+    return null;
+  }
+
+  @Override
+  public boolean transferNode(Stmt stmt, CPFact in, CPFact out) {
+    // TODO - finish me
+    return false;
+  }
+
+  /**
+   * @return true if the given variable can hold integer value, otherwise false.
+   */
+  public static boolean canHoldInt(Var var) {
+    Type type = var.getType();
+    if (type instanceof PrimitiveType) {
+      switch ((PrimitiveType) type) {
+        case BYTE:
+        case SHORT:
+        case INT:
+        case CHAR:
+        case BOOLEAN:
+          return true;
+      }
     }
+    return false;
+  }
 
-    @Override
-    public boolean isForward() {
-        return true;
-    }
-
-    @Override
-    public CPFact newBoundaryFact(CFG<Stmt> cfg) {
-        // TODO - finish me
-        return null;
-    }
-
-    @Override
-    public CPFact newInitialFact() {
-        // TODO - finish me
-        return null;
-    }
-
-    @Override
-    public void meetInto(CPFact fact, CPFact target) {
-        // TODO - finish me
-    }
-
-    /**
-     * Meets two Values.
-     */
-    public Value meetValue(Value v1, Value v2) {
-        // TODO - finish me
-        return null;
-    }
-
-    @Override
-    public boolean transferNode(Stmt stmt, CPFact in, CPFact out) {
-        // TODO - finish me
-        return false;
-    }
-
-    /**
-     * @return true if the given variable can hold integer value, otherwise false.
-     */
-    public static boolean canHoldInt(Var var) {
-        Type type = var.getType();
-        if (type instanceof PrimitiveType) {
-            switch ((PrimitiveType) type) {
-                case BYTE:
-                case SHORT:
-                case INT:
-                case CHAR:
-                case BOOLEAN:
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Evaluates the {@link Value} of given expression.
-     *
-     * @param exp the expression to be evaluated
-     * @param in  IN fact of the statement
-     * @return the resulting {@link Value}
-     */
-    public static Value evaluate(Exp exp, CPFact in) {
-        // TODO - finish me
-        return null;
-    }
+  /**
+   * Evaluates the {@link Value} of given expression.
+   *
+   * @param exp the expression to be evaluated
+   * @param in  IN fact of the statement
+   * @return the resulting {@link Value}
+   */
+  public static Value evaluate(Exp exp, CPFact in) {
+    // TODO - finish me
+    return null;
+  }
 }
