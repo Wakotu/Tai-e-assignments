@@ -97,19 +97,15 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
     return Value.getNAC();
   }
 
-  private static boolean merge(CPFact fact, CPFact target) {
-    var flag = false;
-    for (var key : fact.keySet()) {
-      flag = flag | target.update(key, fact.get(key));
-    }
-    return flag;
-  }
-
   @Override
   // returns whether the out(in) Node has changed
   public boolean transferNode(Stmt stmt, CPFact in, CPFact out) {
     var temp = out.copy();
-    var flag = merge(in, out);
+    out.clear();
+    for (var key : in.keySet()) {
+      out.update(key, in.get(key));
+    }
+    var flag = !out.equals(temp);
 
     Var def = null;
     try {
