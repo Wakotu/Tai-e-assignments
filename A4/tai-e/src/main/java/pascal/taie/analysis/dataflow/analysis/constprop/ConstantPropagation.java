@@ -108,6 +108,7 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
   @Override
   // returns whether the out(in) Node has changed
   public boolean transferNode(Stmt stmt, CPFact in, CPFact out) {
+    var temp = out.copy();
     var flag = merge(in, out);
 
     Var def = null;
@@ -141,23 +142,25 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
 
     // check method call
     if (stmt instanceof Invoke) {
-      flag |= out.update(def, Value.getNAC());
-      return flag;
+      out.update(def, Value.getNAC());
+      return out.equals(temp);
     }
     // check load Fields to detect object fileds
     for (var use : useList) {
       if (use instanceof Var) {
         Var x = (Var) use;
         if (x.getLoadFields().size() > 0) {
-          flag |= out.update(def, Value.getNAC());
-          return flag;
+          out.update(def, Value.getNAC());
+          return out.equals(temp);
         }
       }
     }
     if (useList.size() == 1 || useList.size() == 3) {
       var val = evaluate(useList.get(useList.size() - 1), in);
-      if (val != null)
-        flag |= out.update(def, val);
+      if (val != null) {
+        out.update(def, val);
+        return out.equals(temp);
+      }
     }
     return flag;
   }
