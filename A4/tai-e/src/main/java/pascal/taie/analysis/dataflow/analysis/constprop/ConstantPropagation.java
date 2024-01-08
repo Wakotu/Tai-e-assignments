@@ -143,7 +143,7 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
     // check method call
     if (stmt instanceof Invoke) {
       out.update(def, Value.getNAC());
-      return out.equals(temp);
+      return !out.equals(temp);
     }
     // check load Fields to detect object fileds
     for (var use : useList) {
@@ -151,7 +151,7 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
         Var x = (Var) use;
         if (x.getLoadFields().size() > 0) {
           out.update(def, Value.getNAC());
-          return out.equals(temp);
+          return !out.equals(temp);
         }
       }
     }
@@ -159,7 +159,7 @@ public class ConstantPropagation extends AbstractDataflowAnalysis<Stmt, CPFact> 
       var val = evaluate(useList.get(useList.size() - 1), in);
       if (val != null) {
         out.update(def, val);
-        return out.equals(temp);
+        return !out.equals(temp);
       }
     }
     return flag;
