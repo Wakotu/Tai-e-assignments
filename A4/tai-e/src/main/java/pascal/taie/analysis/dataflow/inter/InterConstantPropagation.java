@@ -22,8 +22,10 @@
 
 package pascal.taie.analysis.dataflow.inter;
 
+import java.util.NoSuchElementException;
 import pascal.taie.analysis.dataflow.analysis.constprop.CPFact;
 import pascal.taie.analysis.dataflow.analysis.constprop.ConstantPropagation;
+import pascal.taie.analysis.dataflow.analysis.constprop.Value;
 import pascal.taie.analysis.graph.cfg.CFG;
 import pascal.taie.analysis.graph.cfg.CFGBuilder;
 import pascal.taie.analysis.graph.icfg.CallEdge;
@@ -73,7 +75,15 @@ public class InterConstantPropagation extends AbstractInterDataflowAnalysis<JMet
   }
 
   @Override
-  protected boolean transferCallNode(Stmt stmt, CPFact in, CPFact out) {}
+  protected boolean transferCallNode(Stmt stmt, CPFact in, CPFact out) {
+    // identity function with the ability to detect if modified
+    var temp = out.copy();
+    out.clear();
+    for (var key : in.keySet()) {
+      out.update(key, in.get(key));
+    }
+    return !out.equals(temp);
+  }
 
   @Override
   protected boolean transferNonCallNode(Stmt stmt, CPFact in, CPFact out) {
@@ -82,25 +92,70 @@ public class InterConstantPropagation extends AbstractInterDataflowAnalysis<JMet
 
   @Override
   protected CPFact transferNormalEdge(NormalEdge<Stmt> edge, CPFact out) {
-    // TODO - finish me
-    return null;
+    return out.copy();
+  }
+
+  private static Var extractDef(Stmt stmt) {
+    Var def = null;
+    try {
+      var x = stmt.getDef().get();
+      if (x instanceof Var)
+        def = (Var) x;
+    } catch (NoSuchElementException e) {
+    }
+    return def;
   }
 
   @Override
   protected CPFact transferCallToReturnEdge(CallToReturnEdge<Stmt> edge, CPFact out) {
-    // TODO - finish me
-    return null;
+    var stmt = edge.getSource();
+    Var x = extractDef(stmt);
+
+    var res = out.copy();
+    // handle res
+    if (x != null) {
+      res.remove(x);
+    }
+
+    return res;
   }
 
   @Override
   protected CPFact transferCallEdge(CallEdge<Stmt> edge, CPFact callSiteOut) {
-    // TODO - finish me
-    return null;
+    var cs = edge.getSource();
+    // try to get value of real parameter
+    var args = ((Invoke) cs).getInvokeExp().getArgs();
+    var entry = edge.getTarget();
+    // get formal parameter
+    var ir = icfg.getContainingMethodOf(entry).getIR();
+    var params = ir.getParams();
+    // construct fact
+    var fact = newInitialFact();
+    assert args.size() == params.size() : "args length unequal to params";
+    for (int i = 0; i < args.size(); i++) {
+      var val = callSiteOut.get(args.get(i));
+      fact.update(params.get(i), val);
+    }
+    return fact;
   }
 
   @Override
   protected CPFact transferReturnEdge(ReturnEdge<Stmt> edge, CPFact returnOut) {
-    // TODO - finish me
-    return null;
+    var cs = edge.getCallSite();
+    Var x = extractDef(cs);
+    var fact = newInitialFact();
+    if (x == null) {
+      return fact;
+    }
+    var rets = edge.getReturnVars();
+    // merge of multiple var here is equivalent to meet multiple values from multiple branch for one
+    // var
+    Value val = Value.getUndef();
+    for (Var y : rets) {
+      var t = returnOut.get(y);
+      val = cp.meetValue(val, t);
+    }
+    fact.update(x, val);
+    return fact;
   }
 }

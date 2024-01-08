@@ -22,13 +22,13 @@
 
 package pascal.taie.analysis.dataflow.inter;
 
-import pascal.taie.analysis.dataflow.fact.DataflowResult;
-import pascal.taie.analysis.graph.icfg.ICFG;
-import pascal.taie.util.collection.SetQueue;
-
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
+import pascal.taie.analysis.dataflow.fact.DataflowResult;
+import pascal.taie.analysis.graph.icfg.ICFG;
+import pascal.taie.util.collection.SetQueue;
 
 /**
  * Solver for inter-procedural data-flow analysis.
@@ -36,33 +36,62 @@ import java.util.stream.Collectors;
  * adopt work-list algorithm for efficiency.
  */
 class InterSolver<Method, Node, Fact> {
+  private final InterDataflowAnalysis<Node, Fact> analysis;
 
-    private final InterDataflowAnalysis<Node, Fact> analysis;
+  private final ICFG<Method, Node> icfg;
 
-    private final ICFG<Method, Node> icfg;
+  private DataflowResult<Node, Fact> result;
 
-    private DataflowResult<Node, Fact> result;
+  private Queue<Node> workList;
 
-    private Queue<Node> workList;
+  InterSolver(InterDataflowAnalysis<Node, Fact> analysis, ICFG<Method, Node> icfg) {
+    this.analysis = analysis;
+    this.icfg = icfg;
+  }
 
-    InterSolver(InterDataflowAnalysis<Node, Fact> analysis,
-                ICFG<Method, Node> icfg) {
-        this.analysis = analysis;
-        this.icfg = icfg;
+  DataflowResult<Node, Fact> solve() {
+    result = new DataflowResult<>();
+    initialize();
+    doSolve();
+    return result;
+  }
+
+  private void initialize() {
+    for (Node node : icfg) {
+      result.setInFact(node, analysis.newInitialFact());
+      result.setOutFact(node, analysis.newInitialFact());
+    }
+    for (Method m : icfg.entryMethods().collect(Collectors.toList())) {
+      Node entry = icfg.getEntryOf(m);
+      result.setOutFact(entry, analysis.newBoundaryFact(entry));
+    }
+  }
+
+  private void doSolve() {
+    workList = new LinkedList<>();
+
+    for (Node node : icfg) {
+      workList.add(node);
     }
 
-    DataflowResult<Node, Fact> solve() {
-        result = new DataflowResult<>();
-        initialize();
-        doSolve();
-        return result;
-    }
+    while (!workList.isEmpty()) {
+      Node u = workList.remove();
 
-    private void initialize() {
-        // TODO - finish me
-    }
+      // get in fact
+      for (var e : icfg.getInEdgesOf(u)) {
+        Node p = e.getSource();
+        var fact = analysis.transferEdge(e, result.getOutFact(p));
+        analysis.meetInto(fact, result.getInFact(u));
+      }
 
-    private void doSolve() {
-        // TODO - finish me
+      // get out fact
+      boolean flag = analysis.transferNode(u, result.getInFact(u), result.getOutFact(u));
+      if (flag) {
+        for (var e : icfg.getOutEdgesOf(u)) {
+          Node v = e.getTarget();
+          workList.add(v);
+        }
+      }
     }
+  }
 }
