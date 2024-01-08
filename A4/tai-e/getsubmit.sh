@@ -10,7 +10,7 @@ mkdir "$dir"
 
 files=()
 
-basenames=('ConstantPropagation.java' 'Solver.java' 'WorkListSolver.java')
+basenames=('InterConstantPropagation.java' 'InterSolver.java' 'CHABuilder.java')
 
 for name in "${basenames[@]}"; do
 	files+=($(find . -name "$name"))
